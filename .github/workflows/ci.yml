@@ -53,7 +53,8 @@ jobs:
       - name: 构建网页
         run: npm run build -w @aihot/web
       - name: 装浏览器（Web 测试用）
-        run: npx playwright install --with-deps chromium
+        # 两个都要装：测试里既有 Chromium 用例也有 WebKit 用例（native-video 各跑一遍）。
+        run: npx playwright install --with-deps chromium webkit
       - name: Web 测试
         run: node --test apps/web/tests/*.test.ts
       - name: 后端测试
