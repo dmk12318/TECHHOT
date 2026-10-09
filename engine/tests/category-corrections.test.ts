@@ -43,7 +43,9 @@ test("category corrections revise every standard report atomically without selec
   for (const r of contents) await sql`INSERT INTO reports (kind,key,window_start,window_end,content,generated_at,origin)
     VALUES (${r.kind},${r.key},now(),now(),${sql.json(r.content as never)},now(),'imported')`;
   const [before] = await sql`SELECT selected,seat,score,visible_after,selected_ready_at FROM publications WHERE article_id=${articleId}`;
-  const change = (actor: string) => overrideFields(articleId, { fields: { category: "tech-consumer", tags: ["开源/仓库", "DeepSeek"] }, version: 0, reason: "工具不是模型" }, actor);
+  // 换成另一个**分节**里的类别：我们的两个领域类别共用「科技」一节，同类分节内移动不会让报告重写，
+  // 所以这里用「观点与解读」——它单独一节，能验证"改分类会让报告重建"。
+  const change = (actor: string) => overrideFields(articleId, { fields: { category: "commentary", tags: ["观点与解读", "DeepSeek"] }, version: 0, reason: "工具不是模型" }, actor);
   await sql.unsafe(`CREATE FUNCTION reject_category_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
     IF NEW.actor = 'reject-category' THEN RAISE EXCEPTION 'category audit rejected'; END IF; RETURN NEW; END $$`);
   await sql.unsafe("CREATE TRIGGER reject_category_audit BEFORE INSERT ON audit_log FOR EACH ROW EXECUTE FUNCTION reject_category_audit()");
@@ -62,12 +64,12 @@ test("category corrections revise every standard report atomically without selec
     const c = saved!.content;
     assert.equal(c.leadItemId, articleId);
     if (r.kind === "daily") {
-      assert.deepEqual(c.sections, [{ label: "科技", items: [entry] }]);
+      assert.deepEqual(c.sections, [{ label: "观点与解读", items: [entry] }]);
       assert.equal(c.metrics.modelsReleased, 0);
       assert.deepEqual(c.highlights, [articleId]);
       assert.equal(c.lead.title, "冻结头条");
     } else {
-      assert.deepEqual(c.themes, [{ heading: "科技", summary: null, storyRefs: [entry] }]);
+      assert.deepEqual(c.themes, [{ heading: "观点与解读", summary: null, storyRefs: [entry] }]);
       assert.deepEqual(c.storyOrder, [articleId]);
       assert.equal(c.overview, "保留总述");
     }

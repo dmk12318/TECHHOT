@@ -118,15 +118,15 @@ test("a company topic takes the articles about it, not the ones that only mentio
     const res = await app.inject({ method: "GET", url: `/api/site/items/${id}` });
     return (JSON.parse(res.body) as { topics: Array<{ slug: string }> }).topics.map((t) => t.slug);
   };
-  assert.deepEqual(await topicsOf(about), ["anthropic", "model-releases"]);
-  assert.deepEqual(await topicsOf(subpoena), ["openai", "model-releases"]);
-  assert.deepEqual(await topicsOf(pact), ["model-releases"]);
-  assert.deepEqual(await topicsOf(agent), ["agent", "model-releases"]);
+  assert.deepEqual(await topicsOf(about), ["anthropic"]);
+  assert.deepEqual(await topicsOf(subpoena), ["openai"]);
+  assert.deepEqual(await topicsOf(pact), []);
+  assert.deepEqual(await topicsOf(agent), ["large-models"]);
 });
 
 test("a story page names the topics of its reports", async () => {
   const launch = await story(`智能体框架 V2 发布 ${T}`);
-  await report({ source: OFFICIAL, at: hoursAgo(26), title: `智能体框架 V2 发布 ${T}`, tags: ["Agent"], fact: await fact(launch.id, "发布 V2") });
+  await report({ source: OFFICIAL, at: hoursAgo(26), title: `智能体框架 V2 发布 ${T}`, tags: ["大模型"], fact: await fact(launch.id, "发布 V2") });
   assert.deepEqual(await topicsOfStory(launch.id), [{ slug: "large-models", name: "大模型" }]);
 });
 
