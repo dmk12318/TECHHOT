@@ -1,8 +1,11 @@
-# 在本机启动或停止站点（api + worker + 网页）。
+﻿# 在本机启动或停止站点（api + worker + 网页）。
 #
 # 用法（在项目根目录下）：
-#   pwsh -File scripts\本机启动.ps1            # 启动
-#   pwsh -File scripts\本机启动.ps1 -Stop      # 停止，并清掉卡住的定时任务
+#   powershell -ExecutionPolicy Bypass -File scripts\本机启动.ps1          # 启动
+#   powershell -ExecutionPolicy Bypass -File scripts\本机启动.ps1 -Stop    # 停止，并清掉卡住的定时任务
+#
+# 这台机器只有 Windows 自带的 PowerShell 5.1（没有 pwsh），而且它默认禁止运行脚本，
+# 所以命令里要带 -ExecutionPolicy Bypass；在项目根目录下跑，路径才对得上。
 #
 # 两个注意：
 #   1. 本机跑必须用**非 production** 模式（下面显式清掉 NODE_ENV），否则

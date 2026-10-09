@@ -8,7 +8,7 @@
 
 - 阶段：**阶段 0（环境）与阶段 1（把引擎改成科技板块）已完成**，接下来是阶段 2
 - 部署路线：路线 B（Actions 定时跑 + 免费 Postgres + 静态页），见 `records/决策记录.md`
-- 现在能跑：本机 `pwsh -File scripts\本机启动.ps1` 起站点，http://localhost:3000
+- 现在能跑：本机 `powershell -ExecutionPolicy Bypass -File scripts\本机启动.ps1` 起站点，http://localhost:3000
   （采集和模型调用已开，用的是 DeepSeek；评分标准和门槛都按 Gold 样本校准过）
 - 下一步：阶段 2——把常驻服务改成「跑一次就跑完」的管线，见 `docs/执行清单.md`
 - 最近更新：2026-10-09

@@ -1,6 +1,6 @@
-# 生成 TECH HOT 的站点图标：site/brand/ 下的 icon.png(512)、icon-192.png、apple-icon.png(180)、favicon.ico。
+﻿# 生成 TECH HOT 的站点图标：site/brand/ 下的 icon.png(512)、icon-192.png、apple-icon.png(180)、favicon.ico。
 # 图形和 logo.svg 一致：深色圆角底 + 三根递升的青色柱子（"热度在涨"）。
-# 用法：pwsh -File scripts\生成站点图标.ps1
+# 用法：powershell -ExecutionPolicy Bypass -File scripts\生成站点图标.ps1（在项目根目录下跑）
 param([string]$OutDir)
 
 $ErrorActionPreference = 'Stop'
