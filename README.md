@@ -39,3 +39,4 @@
 | `docs/执行清单.md` | 到手就能接着干的进度清单 |
 | `scripts/环境说明.md` | 阶段 0 全流程教程（升 Node、建 Neon 库、装依赖、跑起来） |
 | `scripts/Neon免费库说明.md` | 免费 Postgres 的额度、建库、连接串、踩坑 |
+| `scripts/部署与仓库说明.md` | 仓库结构、建仓库、要配的密钥、两个 workflow 的行为 |
