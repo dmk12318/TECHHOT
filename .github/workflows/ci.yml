@@ -56,6 +56,21 @@ jobs:
         # 两个都要装：测试里既有 Chromium 用例也有 WebKit 用例（native-video 各跑一遍）。
         run: npx playwright install --with-deps chromium webkit
       - name: Web 测试
-        run: node --test apps/web/tests/*.test.ts
+        run: |
+          set +e
+          node --test apps/web/tests/*.test.ts 2>&1 | tee /tmp/web-tests.log
+          status=${PIPESTATUS[0]}
+          # 把失败的用例名做成注解。注解是公开的（日志要登录才能看），出问题时不用登录也知道挂在哪。
+          grep -a '^✖' /tmp/web-tests.log | sort -u | head -10 | while IFS= read -r line; do
+            echo "::error::${line#✖ }"
+          done
+          exit "$status"
       - name: 后端测试
-        run: npm test
+        run: |
+          set +e
+          npm test 2>&1 | tee /tmp/backend-tests.log
+          status=${PIPESTATUS[0]}
+          grep -a '^✖' /tmp/backend-tests.log | sort -u | head -10 | while IFS= read -r line; do
+            echo "::error::${line#✖ }"
+          done
+          exit "$status"
