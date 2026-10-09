@@ -1,0 +1,29 @@
+# 密钥与本地配置（绝不进仓库）
+engine/.env
+engine/.env.*
+!engine/.env.example
+
+# 依赖与构建产物
+engine/node_modules/
+engine/apps/web/build/
+engine/apps/web/.react-router/
+engine/package/
+engine/fontsource-noto-sans-sc-*.tgz
+
+# 本地数据：Gold 样本要进仓库（那是人工成果），评测报告和缓存不要
+engine/.data/*
+!engine/.data/gold.jsonl
+!engine/.data/gold-labels.txt
+engine/.cache/
+.data/
+*.log
+
+# 上游引擎的 git 历史：本地留着对上游、拉更新用，不进仓库
+.upstream/
+
+# 交接 skill 的会话计数器，是本机的临时状态
+.handoff/counter.json
+
+# 系统文件
+.DS_Store
+Thumbs.db

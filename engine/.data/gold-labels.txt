@@ -1,0 +1,22 @@
+# Gold 标注：每行 "caseId 结论"。没列出来的默认为 reject。
+# select = 该上；reject = 不该上；either = 两可（评测不计入准确率）。
+# 口径见 docs/规范/科技板块选稿规范.md。这是第一遍（我标），等用户复核。
+#
+# 该上：监管落地与执法、平台规则变化、重大经营数据、安全与召回、重大发布
+t-019 select
+t-032 select
+t-037 select
+t-039 select
+t-041 select
+t-042 select
+t-082 select
+t-085 select
+# 复核后改判：国产半导体测量设备（华洋精机 + 蔡司）——份量不够，属产业进展但不该上
+# t-058 由 select 改为 reject（默认值，故不列）
+# 两可：有实质动作但影响面或确定性不足
+t-007 either
+t-034 either
+t-053 either
+t-056 either
+t-072 either
+t-074 either

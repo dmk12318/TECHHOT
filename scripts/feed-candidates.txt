@@ -1,0 +1,58 @@
+# 科技板块候选信源，制表符分隔：名称 <TAB> 分组 <TAB> 地址
+# 这份是"待实测"的候选，不是最终清单。实测结果见 docs/规范/ 下产出的实测表。
+# 分组：中文媒体 / 一手官方 / 英文媒体 / 汽车新能源 / 通信 / 政策监管
+IT之家	中文媒体	https://www.ithome.com/rss/
+36氪	中文媒体	https://36kr.com/feed
+爱范儿	中文媒体	https://www.ifanr.com/feed
+少数派	中文媒体	https://sspai.com/feed
+虎嗅	中文媒体	https://www.huxiu.com/rss/0.xml
+钛媒体	中文媒体	https://www.tmtpost.com/rss.xml
+品玩	中文媒体	https://www.pingwest.com/feed
+机器之心	中文媒体	https://www.jiqizhixin.com/rss
+量子位	中文媒体	https://www.qbitai.com/feed
+智东西	中文媒体	https://zhidx.com/feed
+极客公园	中文媒体	https://www.geekpark.net/rss
+cnBeta	中文媒体	https://rss.cnbeta.com.tw/
+快科技	中文媒体	https://news.mydrivers.com/rss.aspx
+新浪科技滚动	中文媒体	https://rss.sina.com.cn/tech/rollnews.xml
+Solidot	中文媒体	https://www.solidot.org/index.rss
+雷锋网	中文媒体	https://www.leiphone.com/feed
+Apple Newsroom	一手官方	https://www.apple.com/newsroom/rss-feed.rss
+Google 官方博客	一手官方	https://blog.google/rss/
+微软官方博客	一手官方	https://blogs.microsoft.com/feed/
+NVIDIA 官方博客	一手官方	https://blogs.nvidia.com/feed/
+Meta Newsroom	一手官方	https://about.fb.com/news/feed/
+三星 Newsroom	一手官方	https://news.samsung.com/global/feed
+Intel Newsroom	一手官方	https://newsroom.intel.com/feed/
+AMD 新闻室	一手官方	https://www.amd.com/en/newsroom.rss
+高通新闻	一手官方	https://www.qualcomm.com/news/releases/rss
+Arm 新闻	一手官方	https://www.arm.com/rss
+OpenAI 博客	一手官方	https://openai.com/blog/rss.xml
+Anthropic 新闻	一手官方	https://www.anthropic.com/news/rss.xml
+Google DeepMind	一手官方	https://deepmind.google/blog/rss.xml
+The Verge	英文媒体	https://www.theverge.com/rss/index.xml
+Ars Technica	英文媒体	https://feeds.arstechnica.com/arstechnica/index
+TechCrunch	英文媒体	https://techcrunch.com/feed/
+Engadget	英文媒体	https://www.engadget.com/rss.xml
+The Register	英文媒体	https://www.theregister.com/headlines.atom
+Tom's Hardware	英文媒体	https://www.tomshardware.com/feeds/all
+Wired	英文媒体	https://www.wired.com/feed/rss
+CNBC 科技	英文媒体	https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910
+SemiAnalysis	英文媒体	https://semianalysis.com/feed/
+EE Times	英文媒体	https://www.eetimes.com/feed/
+日经亚洲	英文媒体	https://asia.nikkei.com/rss/feed/nar
+Electrek	汽车新能源	https://electrek.co/feed/
+InsideEVs	汽车新能源	https://insideevs.com/rss/articles/all/
+CleanTechnica	汽车新能源	https://cleantechnica.com/feed/
+PV Magazine	汽车新能源	https://www.pv-magazine.com/feed/
+Utility Dive	汽车新能源	https://www.utilitydive.com/feeds/news/
+Automotive News	汽车新能源	https://www.autonews.com/section/rss
+盖世汽车	汽车新能源	https://auto.gasgoo.com/rss/
+Light Reading	通信	https://www.lightreading.com/rss.xml
+Fierce Wireless	通信	https://www.fiercewireless.com/rss/xml
+RCR Wireless	通信	https://www.rcrwireless.com/feed
+Telecompetitor	通信	https://www.telecompetitor.com/feed/
+工信部	政策监管	https://www.miit.gov.cn/
+国家网信办	政策监管	https://www.cac.gov.cn/
+FCC 新闻	政策监管	https://www.fcc.gov/news-events/headlines/feed
+欧盟数字政策	政策监管	https://digital-strategy.ec.europa.eu/en/rss.xml

@@ -1,0 +1,40 @@
+# 代码检查：类型检查 + 测试。本机跑不动全套测试（跨国链路太慢），交给这里跑。
+# 需要配的 Secret：TEST_DATABASE_URL —— 库名必须以 _test 或 _ci 结尾（引擎要求）。
+name: 检查
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    # secrets 不能直接写在 if: 里，先落到 env 再判断。
+    env:
+      TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+    defaults:
+      run:
+        working-directory: engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: engine/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - name: 不需要数据库的测试
+        run: npm run test:standalone
+      - name: 全套测试
+        if: env.TEST_DATABASE_URL != ''
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+        run: npm test

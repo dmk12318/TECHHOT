@@ -1,0 +1,54 @@
+# 每天的出刊：采集 → 处理/评分/写作 → 归组 → 出刊。
+# 用的是引擎的“跑一次就跑完”入口 engine/scripts/run-once.ts（常驻 worker 的替代）。
+#
+# 要配的仓库 Secrets：
+#   DATABASE_URL    Neon 的 direct 连接串（带 sslmode=require，不要 -pooler）
+#   LLM_API_KEY     模型接口的 key
+# 要配的仓库 Variables（可选，不配就用下面的默认值）：
+#   LLM_BASE_URL / LLM_MODEL / SITE_URL
+name: 出刊
+
+on:
+  schedule:
+    # GitHub 的 cron 用 UTC。北京时间 08:10 = UTC 00:10：出当天那期日报。
+    - cron: "10 0 * * *"
+    # 北京时间 20:10 = UTC 12:10：下午补一次，让“全部动态”别停在早上。
+    - cron: "10 12 * * *"
+  workflow_dispatch:
+    inputs:
+      budget:
+        description: 最长跑多少分钟
+        default: "45"
+
+# 两次运行不重叠：同一个库上并发跑会互相抢队列。
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: engine/package-lock.json
+      - run: npm ci
+      - name: 跑一次管线
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL || 'https://api.deepseek.com/v1' }}
+          LLM_MODEL: ${{ vars.LLM_MODEL || 'deepseek-flash' }}
+          LLM_EXTRA_JSON: '{"thinking":{"type":"disabled"}}'
+          SITE_URL: ${{ vars.SITE_URL || 'https://techhot.example' }}
+          COLLECT_ENABLED: "true"
+          MODEL_CALLS_ENABLED: "true"
+        run: node scripts/run-once.ts --budget ${{ github.event.inputs.budget || '45' }}
+      # TODO（阶段 3）：这里再接一步“导出静态页并发布”。

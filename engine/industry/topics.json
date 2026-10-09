@@ -1,0 +1,307 @@
+{
+  "$comment": "主题目录（/topics）。站点启动时读取，改完要重新构建才生效。company 组用 entityId（taxonomy.ts 的 ENTITIES），必须存在；field 和 genre 组用 tags。slug 上线后不要改。",
+  "groups": [
+    {
+      "key": "company",
+      "name": "公司与机构",
+      "blurb": "按厂商和主管部门追踪它的产品、动作与态度"
+    },
+    {
+      "key": "field",
+      "name": "领域方向",
+      "blurb": "按方向深挖：大模型、算力、芯片制造、智能汽车……"
+    },
+    {
+      "key": "genre",
+      "name": "内容形态",
+      "blurb": "按事情的性质浏览：监管、事故、财报、观点、教程"
+    }
+  ],
+  "topics": [
+    {
+      "slug": "apple",
+      "name": "Apple",
+      "group": "company",
+      "entityId": "apple",
+      "definition": "Apple 的全部动态：iPhone、Mac、iPad 与可穿戴的发布与定价，系统更新的影响面，以及召回与服务规则的变化。"
+    },
+    {
+      "slug": "samsung",
+      "name": "三星电子",
+      "group": "company",
+      "entityId": "samsung",
+      "definition": "三星电子的动态：Galaxy 系列的发布与定价、存储与代工产线的产能变化、以及公司层面的经营动作。"
+    },
+    {
+      "slug": "xiaomi",
+      "name": "小米",
+      "group": "company",
+      "entityId": "xiaomi",
+      "definition": "小米的动态：手机与 IoT 产品的发布与定价、澎湃芯片与汽车业务、以及公司层面的经营动作。"
+    },
+    {
+      "slug": "huawei",
+      "name": "华为",
+      "group": "company",
+      "entityId": "huawei",
+      "definition": "华为的动态：终端与鸿蒙生态、昇腾算力、以及出口管制相关的变化。"
+    },
+    {
+      "slug": "google",
+      "name": "Google",
+      "group": "company",
+      "entityId": "google",
+      "aliases": [
+        "DeepMind",
+        "Alphabet"
+      ],
+      "definition": "Google 与 DeepMind 的动态：Gemini 系列模型、Android 与 Pixel、云计算与搜索的规则变化。"
+    },
+    {
+      "slug": "microsoft",
+      "name": "微软",
+      "group": "company",
+      "entityId": "microsoft",
+      "aliases": [
+        "Windows",
+        "Azure"
+      ],
+      "definition": "微软的动态：Windows 与 Office 的更新、Azure 与 Copilot 的产品与定价、以及公司层面的经营动作。"
+    },
+    {
+      "slug": "nvidia",
+      "name": "NVIDIA",
+      "group": "company",
+      "entityId": "nvidia",
+      "aliases": [
+        "英伟达"
+      ],
+      "definition": "NVIDIA 的动态：数据中心 GPU 的发布与供应、CUDA 与软件生态、以及算力相关的政策与出口管制。"
+    },
+    {
+      "slug": "openai",
+      "name": "OpenAI",
+      "group": "company",
+      "entityId": "openai",
+      "aliases": [
+        "ChatGPT"
+      ],
+      "definition": "OpenAI 的全部动态：GPT 系列模型、ChatGPT 与 Sora 产品、公司战略与人事的持续追踪。"
+    },
+    {
+      "slug": "anthropic",
+      "name": "Anthropic",
+      "group": "company",
+      "entityId": "anthropic",
+      "aliases": [
+        "Claude"
+      ],
+      "definition": "Anthropic 的动态：Claude 系列模型、企业服务与安全研究路线的持续追踪。"
+    },
+    {
+      "slug": "tesla",
+      "name": "特斯拉",
+      "group": "company",
+      "entityId": "tesla",
+      "aliases": [
+        "Tesla"
+      ],
+      "definition": "特斯拉的动态：车型价格与交付、自动驾驶的法规与事故调查、以及储能业务的进展。"
+    },
+    {
+      "slug": "byd",
+      "name": "比亚迪",
+      "group": "company",
+      "entityId": "byd",
+      "aliases": [
+        "BYD"
+      ],
+      "definition": "比亚迪的动态：车型价格与技术路线、辅助驾驶的落地与监管、以及海外市场与产能的进展。"
+    },
+    {
+      "slug": "catl",
+      "name": "宁德时代",
+      "group": "company",
+      "entityId": "catl",
+      "aliases": [
+        "CATL"
+      ],
+      "definition": "宁德时代的动态：动力与储能电池的技术路线、产能与价格、以及产业链合作。"
+    },
+    {
+      "slug": "tsmc",
+      "name": "台积电",
+      "group": "company",
+      "entityId": "tsmc",
+      "aliases": [
+        "TSMC"
+      ],
+      "definition": "台积电的动态：制程进展与产能、代工报价与客户结构、以及海外建厂与出口管制的影响。"
+    },
+    {
+      "slug": "qualcomm",
+      "name": "高通",
+      "group": "company",
+      "entityId": "qualcomm",
+      "aliases": [
+        "骁龙",
+        "Snapdragon"
+      ],
+      "definition": "高通的动态：骁龙平台的发布与采用、专利授权与诉讼、以及汽车与物联网业务的进展。"
+    },
+    {
+      "slug": "intel",
+      "name": "Intel",
+      "group": "company",
+      "entityId": "intel",
+      "aliases": [
+        "英特尔"
+      ],
+      "definition": "Intel 的动态：处理器与制程进展、代工业务的产能与客户、以及公司层面的经营动作。"
+    },
+    {
+      "slug": "alibaba",
+      "name": "阿里巴巴",
+      "group": "company",
+      "entityId": "alibaba",
+      "aliases": [
+        "阿里云",
+        "通义"
+      ],
+      "definition": "阿里巴巴的动态：通义系列模型与阿里云的算力与价格、电商平台的规则变化。"
+    },
+    {
+      "slug": "large-models",
+      "name": "大模型",
+      "group": "field",
+      "tags": [
+        "大模型"
+      ],
+      "definition": "大模型的发布、能力变化与价格：谁在什么时间放出了什么，以及它对使用者的实际影响。"
+    },
+    {
+      "slug": "compute",
+      "name": "算力",
+      "group": "field",
+      "tags": [
+        "算力"
+      ],
+      "definition": "算力的供给与需求：芯片与集群的产能、租赁价格、出口管制对算力获取的影响。"
+    },
+    {
+      "slug": "chipmaking",
+      "name": "芯片制造",
+      "group": "field",
+      "tags": [
+        "芯片制造",
+        "存储"
+      ],
+      "definition": "制程、产能、设备与材料：先进制程的进展、光刻与设备出口限制、存储的涨价与缺货。"
+    },
+    {
+      "slug": "smartphones",
+      "name": "智能手机与可穿戴",
+      "group": "field",
+      "tags": [
+        "智能手机",
+        "可穿戴"
+      ],
+      "definition": "手机与可穿戴的发布、定价与影响面：包括系统更新带来的功能与限制变化。"
+    },
+    {
+      "slug": "smart-driving",
+      "name": "智能汽车",
+      "group": "field",
+      "tags": [
+        "智能汽车",
+        "辅助驾驶"
+      ],
+      "definition": "汽车智能化：辅助驾驶的法规与事故调查、车企的价格与技术路线、召回与软件更新。"
+    },
+    {
+      "slug": "battery-storage",
+      "name": "电池与储能",
+      "group": "field",
+      "tags": [
+        "动力电池",
+        "储能"
+      ],
+      "definition": "电池与储能的技术路线、产能与价格，以及电价与补贴政策带来的变化。"
+    },
+    {
+      "slug": "solar",
+      "name": "光伏",
+      "group": "field",
+      "tags": [
+        "光伏"
+      ],
+      "definition": "光伏的产能、价格与技术路线，以及各国补贴与贸易措施的影响。"
+    },
+    {
+      "slug": "platform-rules",
+      "name": "平台治理",
+      "group": "field",
+      "tags": [
+        "平台治理",
+        "数据安全"
+      ],
+      "definition": "平台的规则与处罚、用户规模与收费变化、内容治理，以及数据安全与出境相关的规定。"
+    },
+    {
+      "slug": "export-controls",
+      "name": "出口管制",
+      "group": "field",
+      "tags": [
+        "出口管制"
+      ],
+      "definition": "各国对芯片、设备、算力与技术的出口管制：清单变化、执行案例与产业影响。"
+    },
+    {
+      "slug": "regulation",
+      "name": "监管与政策",
+      "group": "genre",
+      "tags": [
+        "监管与政策"
+      ],
+      "definition": "主管部门与立法机构对科技行业的新规、征求意见、处罚与标准发布。"
+    },
+    {
+      "slug": "safety-recalls",
+      "name": "事故与召回",
+      "group": "genre",
+      "tags": [
+        "事故与安全",
+        "召回"
+      ],
+      "definition": "安全事件与缺陷处理：大规模故障、漏洞被利用、数据泄露、产品召回与调查进展。"
+    },
+    {
+      "slug": "business",
+      "name": "财报与经营",
+      "group": "genre",
+      "tags": [
+        "财报与经营",
+        "合作与并购"
+      ],
+      "definition": "公司的经营面：财报与指引、裁员与人事、融资并购与反垄断审查。"
+    },
+    {
+      "slug": "opinion",
+      "name": "观点与解读",
+      "group": "genre",
+      "tags": [
+        "观点与解读"
+      ],
+      "definition": "对已经发生的事的解释与判断。日报里这类内容只占快讯，不重复占正文。"
+    },
+    {
+      "slug": "howto",
+      "name": "教程与方法",
+      "group": "genre",
+      "tags": [
+        "教程与方法"
+      ],
+      "definition": "读者可以照着用的方法、配置与工具用法。"
+    }
+  ]
+}
