@@ -1,5 +1,10 @@
-# 代码检查：类型检查 + 测试。本机跑不动全套测试（跨国链路太慢），交给这里跑。
-# 需要配的 Secret：TEST_DATABASE_URL —— 库名必须以 _test 或 _ci 结尾（引擎要求）。
+# 代码检查：类型检查 + 后端测试 + Web 测试。本机跑不动全套（跨国链路太慢），交给这里跑。
+#
+# 测试用 runner 自带的 PostgreSQL 容器，**不用 Neon**：测试框架会给每个测试文件复制一份“模板库”，
+# 而复制要求模板库上没有别的连接——Neon 的计算节点内部进程会挂在每个库上，复制经常被拒
+# （现象：source database "dailyhot_ci" is being accessed by other users）。引擎上游自己的 CI 也是这么做的。
+#
+# 这套流程不需要任何仓库密钥：测试里的模型服务商都指向本机 stub。
 name: 检查
 
 on:
@@ -9,16 +14,28 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    # secrets 不能直接写在 if: 里，先落到 env 再判断。
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: dailyhot_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 2s --health-timeout 5s --health-retries 30
     env:
-      TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+      DATABASE_URL: postgres://postgres:ci@127.0.0.1:5432/dailyhot_ci
+      SITE_URL: http://127.0.0.1:3000
+      API_BASE_URL: http://127.0.0.1:3001
+      SESSION_SECRET: ci-session-secret-0123456789abcdef
+      IMG_PROXY_SIGN_SECRET: ci-img-secret-0123456789abcdef
     defaults:
       run:
         working-directory: engine
@@ -33,8 +50,11 @@ jobs:
       - run: npm run typecheck
       - name: 不需要数据库的测试
         run: npm run test:standalone
-      - name: 全套测试
-        if: env.TEST_DATABASE_URL != ''
-        env:
-          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+      - name: 构建网页
+        run: npm run build -w @aihot/web
+      - name: 装浏览器（Web 测试用）
+        run: npx playwright install --with-deps chromium
+      - name: Web 测试
+        run: node --test apps/web/tests/*.test.ts
+      - name: 后端测试
         run: npm test

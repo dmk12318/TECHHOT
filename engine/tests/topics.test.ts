@@ -100,7 +100,7 @@ test("a company topic takes the articles about it, not the ones that only mentio
   const metadata = await report({ at: hoursAgo(36), title: `Metadata 标准发布，OpenAI 参与 ${T}`, subjects: ["meta", "openai"] });
   const adjacent = await report({ at: hoursAgo(37), title: `发布Meta的新模型 ${T}`, subjects: ["meta", "openai"] });
   const headline = await report({ at: hoursAgo(38), title: `Anthropic 被一篇盘点提到 ${T}`, subjects: ["google"] });
-  const agent = await report({ at: hoursAgo(39), title: `智能体框架发布 ${T}`, tags: ["Agent"] });
+  const agent = await report({ at: hoursAgo(39), title: `智能体框架发布 ${T}`, tags: ["大模型"] });
 
   const anthropic = await members("anthropic");
   for (const id of [about, product, english]) assert.ok(anthropic.includes(id), "about Anthropic");
@@ -111,7 +111,7 @@ test("a company topic takes the articles about it, not the ones that only mentio
   const meta = await members("meta");
   assert.ok(meta.includes(adjacent), "Meta next to Chinese text");
   assert.ok(!meta.includes(metadata), "Metadata is not Meta");
-  assert.ok((await members("agent")).includes(agent), "a technical direction takes its tag");
+  assert.ok((await members("large-models")).includes(agent), "a technical direction takes its tag");
 
   // The article page names the topics it belongs to.
   const topicsOf = async (id: string) => {
@@ -127,7 +127,7 @@ test("a company topic takes the articles about it, not the ones that only mentio
 test("a story page names the topics of its reports", async () => {
   const launch = await story(`智能体框架 V2 发布 ${T}`);
   await report({ source: OFFICIAL, at: hoursAgo(26), title: `智能体框架 V2 发布 ${T}`, tags: ["Agent"], fact: await fact(launch.id, "发布 V2") });
-  assert.deepEqual(await topicsOfStory(launch.id), [{ slug: "agent", name: "Agent 智能体" }, { slug: "model-releases", name: "模型发布" }]);
+  assert.deepEqual(await topicsOfStory(launch.id), [{ slug: "large-models", name: "大模型" }]);
 });
 
 test("withdrawn articles stay out of lists and counts", async () => {
@@ -139,15 +139,15 @@ test("withdrawn articles stay out of lists and counts", async () => {
   assert.deepEqual(ids(data.items), [kept]);
   assert.equal(data.topic.total, 1);
   const summary = (await listTopicSummaries()).topics.find((t) => t.slug === "apple")!;
-  assert.equal(summary.latest?.title, `Kimi 发布新模型 ${T}`, "the index shows the newest public article");
+  assert.equal(summary.latest?.title, `Apple 发布新设备 ${T}`, "the index shows the newest public article");
 });
 
 test("every topic has a page; unknown topics and pages past the end have none", async () => {
-  const empty = await page("cursor");
+  const empty = await page("catl");
   assert.equal(empty.topic.indexable, false, "a topic without content is not indexed");
   assert.deepEqual(empty.items, []);
   assert.equal(await loadTopicPage("not-a-topic", 1, new Date()), null);
-  assert.equal(await loadTopicPage("cursor", 2, new Date()), null);
+  assert.equal(await loadTopicPage("catl", 2, new Date()), null);
   const index = await app.inject({ method: "GET", url: "/api/site/topics" });
   const body = JSON.parse(index.body) as { groups: Array<{ key: string }>; topics: Array<{ slug: string }> };
   assert.deepEqual(body.groups.map((g) => g.key), ["company", "field", "genre"]);

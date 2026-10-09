@@ -69,6 +69,17 @@
       "definition": "微软的动态：Windows 与 Office 的更新、Azure 与 Copilot 的产品与定价、以及公司层面的经营动作。"
     },
     {
+      "slug": "meta",
+      "name": "Meta",
+      "group": "company",
+      "entityId": "meta",
+      "aliases": [
+        "Facebook",
+        "Instagram"
+      ],
+      "definition": "Meta 的动态：Llama 系列模型与开源权重、Quest 头显与智能眼镜、广告系统与内容治理的规则变化。"
+    },
+    {
       "slug": "nvidia",
       "name": "NVIDIA",
       "group": "company",
