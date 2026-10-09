@@ -50,6 +50,16 @@ jobs:
       - run: npm run typecheck
       - name: 不需要数据库的测试
         run: npm run test:standalone
+      - name: 装 PostgreSQL 客户端（备份测试要 pg_dump / pg_restore）
+        # 服务容器只提供数据库，pg_dump 要在 runner 上装；版本要跟服务容器一致（17）。
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
       - name: 构建网页
         run: npm run build -w @aihot/web
       - name: 装浏览器（Web 测试用）
