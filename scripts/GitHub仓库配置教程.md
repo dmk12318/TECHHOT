@@ -61,7 +61,7 @@ git push -u origin main
 | --- | --- | --- |
 | `DATABASE_URL` | 打开本地 `engine/.env`，复制 `DATABASE_URL=` 后面那一整行（Neon 的 direct 连接串） | 是 |
 | `LLM_API_KEY` | 同样在 `engine/.env` 里，复制 `LLM_API_KEY=` 后面那串 | 是 |
-| `TEST_DATABASE_URL` | 和 `DATABASE_URL` 一样，但把结尾的 `/neondb` 换成 `/dailyhot_test` | 否 |
+| `TEST_DATABASE_URL` | **本地已经生成好了**：打开 `engine/.cache/test-db-url.txt`，整行复制过来。要自己拼的话：把 `DATABASE_URL` 里 `/neondb?` 那一段的 `neondb` 换成 `dailyhot_test`，**后面的 `?sslmode=require&channel_binding=require` 要留着** | 否 |
 
 每个的流程：点 **New repository secret** → **Name** 填名字 → **Secret** 填值 → 点 **Add secret**。
 加完页面只显示名字、值再也看不到（正常，也说明你复制对了）。
