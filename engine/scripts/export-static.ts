@@ -16,7 +16,7 @@ import path from "node:path";
 import { REPO_ROOT } from "@aihot/backend/config";
 import { closeDb, sql } from "@aihot/backend/db";
 import { PUBLIC_API_CATEGORY_KEYS } from "@aihot/contracts/taxonomy";
-import type { FeedItemSummary } from "@aihot/contracts/site";
+import type { FeedItemSummary, SiteItemDetail, StoryDetail } from "@aihot/contracts/site";
 
 const args = process.argv.slice(2);
 const value = (name: string, fallback: string) => {
@@ -36,12 +36,10 @@ const skipImages = args.includes("--skip-images");
 
 // 这里所有请求都打给同一个 api 进程。预渲染一口气打完几百个请求之后，连接可能被对端收掉，
 // 下一次复用就报 ECONNRESET/ECONNABORTED（本机和 CI 都遇到过）。网络错误重试两次，超时就当真的失败。
-const get = async (p: string) => {
+const request = async (p: string) => {
   for (let attempt = 1; ; attempt++) {
     try {
-      const res = await fetch(api + p);
-      if (!res.ok) throw new Error(`${p} 取不到：HTTP ${res.status}`);
-      return res;
+      return await fetch(api + p);
     } catch (error) {
       // fetch 的网络错误是 TypeError（HTTP 错误码不是）；重试两次，还不行就报出去。
       if (attempt >= 3 || !(error instanceof TypeError)) throw error;
@@ -51,6 +49,34 @@ const get = async (p: string) => {
     }
   }
 };
+const get = async (p: string) => {
+  const res = await request(p);
+  if (!res.ok) throw new Error(`${p} 取不到：HTTP ${res.status}`);
+  return res;
+};
+/**
+ * 问一次接口，问的是「这一页该不该有」：200 给内容，404（没有这一条）和跳转（合并掉的故事
+ * 会 308 到并进去的那条）就当它不该有页面，别的错误照旧抛出去。
+ */
+const probe = async <T>(p: string): Promise<T | null> => {
+  const res = await request(p);
+  if (res.status === 404 || res.redirected) return null;
+  if (!res.ok) throw new Error(`${p} 取不到：HTTP ${res.status}`);
+  return (await res.json()) as T;
+};
+/** 限并发跑一批请求：跟着预渲染的并发度来（4），别把 api 拖垮。 */
+async function eachLimit<T>(items: readonly T[], limit: number, run: (item: T) => Promise<void>) {
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (next < items.length) {
+        const at = next;
+        next += 1;
+        await run(items[at]!);
+      }
+    }),
+  );
+}
 const save = async (p: string, target: string) => {
   const body = Buffer.from(await (await get(p)).arrayBuffer());
   const file = path.join(out, target);
@@ -79,11 +105,47 @@ for (let page = 1; ; page++) {
   if (page >= body.pageCount) break;
 }
 for (const item of pool) paths.push(`/items/${item.id}`);
+
+// 1.5) 页面之间还互相链，链到的页面 sitemap 和「全部动态」都可能没有：
+//      · 条目页的「事件后续」和相关故事走详情接口的 relatedStories，不看 sitemap 那套「上架」条件；
+//      · story 页列的报告是条目页，它自己还会链到别的 story；
+//      · 首页热榜也链到 story 页。
+//      少出一页，读者点过去就是 404 —— 2026-10-10 那次发布就是这么挂的（story/ec7bec14… 有链接、没页面，
+//      「静态站体检」因此卡住）。所以把「活着的 story」全问一遍，再问一遍它们链到的条目：
+//      接口答 200 才给它出页面。预渲染撞上非 200 会直接让构建失败，所以必须在这里先问清楚；
+//      答 404 / 跳转的（合并掉的故事、没有可见报告的 story、没有页面的条目）本来就不该有页面。
+const known = new Set(paths);
+const linked: string[] = [];
+const itemIds = new Set<string>();
+for (const item of pool) if (item.sameEvent) itemIds.add(item.sameEvent.id);
+const aliveStories = await sql<{ public_id: string }[]>`SELECT public_id::text AS public_id FROM stories WHERE merged_into IS NULL`;
+await eachLimit(aliveStories.map((row) => row.public_id), 4, async (id) => {
+  const story = await probe<StoryDetail>(`/api/site/stories/${id}`);
+  if (!story) return;
+  linked.push(`/story/${id}`);
+  for (const report of [story.latestReport, ...story.timeline, ...story.officialReports, ...story.developments.map((d) => d.representative)]) {
+    if (report) itemIds.add(report.id);
+  }
+});
+const pending = [...itemIds].filter((id) => !known.has(`/items/${id}`));
+const probed = new Set<string>();
+for (let at = 0; at < pending.length; at += 4) {
+  await Promise.all(pending.slice(at, at + 4).map(async (id) => {
+    if (probed.has(id)) return;
+    probed.add(id);
+    const item = await probe<SiteItemDetail>(`/api/site/items/${id}`);
+    if (!item) return;
+    linked.push(`/items/${id}`);
+    // 条目页里的「同新闻」卡片指向另一条条目，它也得有页面。
+    if (item.sameEvent) pending.push(item.sameEvent.id);
+  }));
+}
+paths.push(...linked);
 const unique = [...new Set(paths)].sort();
 const listFile = path.join(REPO_ROOT, ".data/static-export-paths.json");
 mkdirSync(path.dirname(listFile), { recursive: true });
 writeFileSync(listFile, JSON.stringify(unique));
-console.log(`路径清单 ${unique.length} 个（含 ${topics.topics.length} 个主题页、${pool.length} 条全部动态）`);
+console.log(`路径清单 ${unique.length} 个（含 ${topics.topics.length} 个主题页、${pool.length} 条全部动态，另按页面里的链接补了 ${linked.length} 个）`);
 
 // 2) 预渲染（写进 out）。注意：这会覆盖网页构建产物，本机跑完要把网页进程重启一下。
 if (skipBuild) {
