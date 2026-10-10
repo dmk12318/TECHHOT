@@ -29,6 +29,13 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      LLM_BASE_URL: ${{ vars.LLM_BASE_URL || 'https://api.deepseek.com/v1' }}
+      LLM_MODEL: ${{ vars.LLM_MODEL || 'deepseek-flash' }}
+      LLM_EXTRA_JSON: '{"thinking":{"type":"disabled"}}'
+      SITE_URL: ${{ vars.SITE_URL || 'https://techhot.example' }}
     defaults:
       run:
         working-directory: engine
@@ -42,12 +49,6 @@ jobs:
       - run: npm ci
       - name: 跑一次管线
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          LLM_BASE_URL: ${{ vars.LLM_BASE_URL || 'https://api.deepseek.com/v1' }}
-          LLM_MODEL: ${{ vars.LLM_MODEL || 'deepseek-flash' }}
-          LLM_EXTRA_JSON: '{"thinking":{"type":"disabled"}}'
-          SITE_URL: ${{ vars.SITE_URL || 'https://techhot.example' }}
           COLLECT_ENABLED: "true"
           MODEL_CALLS_ENABLED: "true"
         run: |
@@ -59,4 +60,16 @@ jobs:
             echo "::error::${line:0:600}"
           done
           exit "$status"
-      # TODO（阶段 3）：这里再接一步“导出静态页并发布”。
+      - name: 导出静态站
+        # 导出要 api 活着（预渲染在线取数）：起一个临时的，这个 workflow 结束就没了。
+        run: |
+          node apps/api/src/main.ts > /tmp/api.log 2>&1 &
+          for i in $(seq 1 60); do curl -fsS -o /dev/null http://127.0.0.1:3001/api/health 2>/dev/null && break; sleep 1; done
+          node scripts/export-static.ts --out static
+      - name: 留下静态站产物
+        # 暂时只作为工程产物留着（发布到 Pages 还没开）。
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-site
+          path: engine/static
+          retention-days: 7

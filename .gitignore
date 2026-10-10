@@ -4,6 +4,7 @@ engine/.env.*
 !engine/.env.example
 
 # 依赖与构建产物
+engine/static/
 engine/node_modules/
 engine/apps/web/build/
 engine/apps/web/.react-router/
