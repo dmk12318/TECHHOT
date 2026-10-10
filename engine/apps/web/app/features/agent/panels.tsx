@@ -95,7 +95,7 @@ export function McpPanel(props: AgentPanelProps) {
                 ...AGENT_PARTS.flatMap((a) => a.mcpTroubles ?? []),
                 "服务不需要登录；客户端问起 OAuth 或 API Key，选“无”即可。",
                 "收到 429 就按提示等一会儿，不要并发重试。",
-                <>还连不上：把客户端名称、版本和报错写到<Link viewTransition to="/feedback" className={link}>反馈页</Link>。</>,
+                <>还连不上：把客户端名称、版本和报错发到<a href={`mailto:${SITE.contactEmail}`} className={link}>{SITE.contactEmail}</a>。</>,
               ]} />
             ),
           },

@@ -6,6 +6,7 @@ import { Form, Link, useLocation, useNavigation } from "react-router";
 import type { SearchSuggestions } from "@aihot/contracts/site";
 import { IconClose, IconSearch } from "../../components/icons";
 import { addRecentSearch, clearRecentSearches, useRecentSearches } from "../../lib/local-state";
+import { loadLocalData, searchLocalData, type LocalData } from "./local-index";
 import { useModal } from "../../components/ui/modal";
 
 // One overlay for the whole site, opened from any bar.
@@ -58,6 +59,9 @@ export function SearchOverlay() {
   const navigation = useNavigation();
   const { key } = useLocation();
   const [more, setMore] = useState<Awaited<ReturnType<typeof loadSuggestions>> | null>(null);
+  // 静态站上后端不在，搜索在本地做；拿不到那份数据时保持原来的"提交到 /all"行为。
+  const [local, setLocal] = useState<LocalData | null>(null);
+  const [query, setQuery] = useState("");
 
   useModal({ open: shown, panel, initialFocus: input, returnFocus: opener, onClose: close });
 
@@ -77,6 +81,7 @@ export function SearchOverlay() {
     setHasText(!!input.current?.value);
     setMore(null);
     void loadSuggestions().then(value => { if (active) setMore(value); }).catch(() => {});
+    void loadLocalData().then(value => { if (active) setLocal(value); });
     // At the desktop breakpoint this layer is hidden by CSS; it must stop holding the page still too.
     const desktop = window.matchMedia("(min-width: 961px)");
     const onResize = () => { if (desktop.matches) close(); };
@@ -102,6 +107,7 @@ export function SearchOverlay() {
   }
 
   const companies = (more?.topics ?? []).filter((t) => t.group === "company").slice(0, 6);
+  const localHits = local && hasText ? searchLocalData(local, query, 12) : [];
   const chip = "inline-flex h-11 max-w-full items-center rounded-full px-3.5 text-[14px] transition-colors";
   return (
     <div
@@ -124,6 +130,8 @@ export function SearchOverlay() {
             return;
           }
           addRecentSearch(q);
+          // 有本地索引（静态站）时结果就在下面，不必跳到 /all?q=（静态站上那个查询不会真的筛）。
+          if (local) e.preventDefault();
         }}
         className="flex h-14 shrink-0 items-center gap-1 pl-4 pr-1 pt-[env(safe-area-inset-top)]"
       >
@@ -134,7 +142,7 @@ export function SearchOverlay() {
             ref={input}
             name="q"
             type="search"
-            onInput={(e) => setHasText(!!e.currentTarget.value)}
+            onInput={(e) => { setHasText(!!e.currentTarget.value); setQuery(e.currentTarget.value); }}
             tabIndex={shown ? 0 : -1}
             placeholder="搜索标题、摘要和正文"
             maxLength={200}
@@ -165,6 +173,24 @@ export function SearchOverlay() {
 
       {shown && (
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(24px,env(safe-area-inset-bottom))]">
+          {hasText && local && (
+            <section className="pt-3">
+              <h2 className="text-[13px] font-semibold text-ink-3">{localHits.length > 0 ? "结果" : "没找到"}</h2>
+              {localHits.length > 0 && (
+                <ol className="mt-1 divide-y divide-line-soft">
+                  {localHits.map((hit) => (
+                    <li key={hit.u}>
+                      <Link viewTransition to={hit.u} onClick={() => addRecentSearch(query)} className="block py-3 active:opacity-60">
+                        <span className="block text-[15px] leading-6 text-ink">{hit.t}</span>
+                        <span className="mt-0.5 block text-[12.5px] text-ink-4">{[hit.c, hit.src, hit.d].filter(Boolean).join(" · ")}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </section>
+          )}
+
           {recent.length > 0 && (
             <section className="pt-3">
               <div className="flex items-center justify-between">

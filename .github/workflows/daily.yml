@@ -60,12 +60,31 @@ jobs:
             echo "::error::${line:0:600}"
           done
           exit "$status"
+      - name: 取回分享图缓存
+        # 分享图每张都要渲染一次，一天一百多张；缓存起来只补新出现的，否则条目越攒越多，导出会慢到跑不完。
+        uses: actions/cache@v4
+        with:
+          path: engine/.data/og
+          key: og-${{ github.run_number }}
+          restore-keys: og-
       - name: 导出静态站
         # 导出要 api 活着（预渲染在线取数）：起一个临时的，这个 workflow 结束就没了。
         run: |
           node apps/api/src/main.ts > /tmp/api.log 2>&1 &
           for i in $(seq 1 60); do curl -fsS -o /dev/null http://127.0.0.1:3001/api/health 2>/dev/null && break; sleep 1; done
           node scripts/export-static.ts --out static
+      - name: 装浏览器（静态站体检用）
+        run: npx playwright install --with-deps chromium
+      - name: 静态站体检
+        # 链接取不到、客户端跳转坏掉、搜索不出结果，都在这里挡住：宁可这一期不发，也别发一个点进去 404 的站。
+        run: |
+          set +e
+          node --test apps/web/tests/static-nav.test.ts 2>&1 | tee /tmp/static-tests.log
+          status=${PIPESTATUS[0]}
+          grep -a '^✖' /tmp/static-tests.log | sort -u | head -5 | while IFS= read -r line; do
+            echo "::error::${line#✖ }"
+          done
+          exit "$status"
       - name: 留下静态站产物
         # 暂时只作为工程产物留着（发布到 Pages 还没开）。
         uses: actions/upload-artifact@v4

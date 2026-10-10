@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, redirect, useLoaderData, useNavigation, useSearchParams } from "react-router";
 import type { Route } from "./+types/all";
 import type { PoolResponse } from "@aihot/contracts/site";
@@ -15,6 +15,7 @@ import { IconSearch } from "../components/icons";
 import { PhoneBar } from "../components/shell/PhoneBar";
 import { isPhone, type Screen } from "../components/shell/screens";
 import { openSearch } from "../features/search/SearchOverlay";
+import { loadLocalData, localPoolView, type LocalData } from "../features/search/local-index";
 import { addRecentSearch } from "../lib/local-state";
 
 export const handle: Screen = { tab: "featured", name: "全部" };
@@ -68,7 +69,26 @@ export default function AllPage() {
   const { data } = useLoaderData<typeof loader>();
   const [params] = useSearchParams();
   const navigation = useNavigation();
-  const f = data.filters;
+  // 静态站没有后端：地址里带筛选/搜索/翻页时，改用导出时生成的本地数据在浏览器里算，
+  // 算出来的形状和 /api/site/pool 一样，下面照旧渲染。开发环境读不到那份数据，一切照旧走服务端。
+  const paramsKey = params.toString();
+  const [local, setLocal] = useState<LocalData | null>(null);
+  useEffect(() => {
+    if (!paramsKey) return;
+    let active = true;
+    void loadLocalData().then((value) => { if (active) setLocal(value); });
+    return () => { active = false; };
+  }, [paramsKey]);
+  const localMode = !!local && !!paramsKey;
+  const view = local && localMode
+    ? localPoolView(local, {
+      ...readFilters(params),
+      q: params.get("q"),
+      tab: params.get("tab") === "relevance" ? "relevance" : "time",
+      page: Number.parseInt(params.get("page") ?? "1", 10) || 1,
+    }, Date.now())
+    : data;
+  const f = view.filters;
   const busy = navigation.state === "loading" && navigation.location?.pathname === "/all";
   const { channel, category } = filterParams(f);
   const keep = { channel, category };
@@ -80,7 +100,7 @@ export default function AllPage() {
     return `/all?${sp}`;
   };
   const title = f.q ? `搜索“${f.q}”` : f.tag ? `#${f.tag}` : null;
-  const updated = beijingTime(data.freshness);
+  const updated = beijingTime(view.freshness);
   // Searches are remembered in this browser for the phone search (listed in the privacy notice).
   useEffect(() => {
     if (f.q) addRecentSearch(f.q);
@@ -124,21 +144,21 @@ export default function AllPage() {
             layoutId="all-search-sort"
             label="搜索排序"
             active={f.tab}
-            items={(["time", "relevance"] as const).map((t) => ({ key: t, label: t === "time" ? "最新（标题与摘要）" : "全文相关", to: searchTabHref(t) }))}
+            items={(["time", "relevance"] as const).map((t) => ({ key: t, label: t === "time" ? "最新（标题与摘要）" : localMode ? "相关（标题与摘要）" : "全文相关", to: searchTabHref(t) }))}
           />
           <span className="text-[12px] text-ink-4">
-            找到 <span className="num">{data.total >= 2000 ? "2000+" : data.total}</span> 条 · 更新于 <span className="num">{updated}</span>
+            找到 <span className="num">{view.total >= 2000 ? "2000+" : view.total}</span> 条 · 更新于 <span className="num">{updated}</span>
           </span>
         </div>
       )}
 
       <div className={`transition-opacity duration-200 ${busy ? "opacity-50" : ""}`}>
-        {data.items.length === 0 ? (
+        {view.items.length === 0 ? (
           <div className="mt-2 lg:card">
             <EmptyState
               title="没有找到相关内容"
               action={
-                f.q && f.tab === "time" ? (
+                !localMode && f.q && f.tab === "time" ? (
                   <Link to={searchTabHref("relevance")} className="text-[13px] font-medium text-accent hover:underline">
                     试试“全文相关”，连正文一起搜
                   </Link>
@@ -149,11 +169,11 @@ export default function AllPage() {
             </EmptyState>
           </div>
         ) : (
-          <DayList items={data.items} todayCount={f.q ? null : data.todayCount} />
+          <DayList items={view.items} todayCount={f.q ? null : view.todayCount} />
         )}
       </div>
-      <Pagination page={data.page} pageCount={data.pageCount} href={(p) => pageHref(params, p)} />
-      {data.page >= 50 && <p className="mt-4 text-center text-[12px] text-ink-4">最多提供 50 页，更早的内容请使用搜索或主题页。</p>}
+      <Pagination page={view.page} pageCount={view.pageCount} href={(p) => pageHref(params, p)} />
+      {view.page >= 50 && <p className="mt-4 text-center text-[12px] text-ink-4">最多提供 50 页，更早的内容请使用搜索或主题页。</p>}
     </div>
   );
 }

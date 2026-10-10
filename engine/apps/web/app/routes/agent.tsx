@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { IntentLink } from "../components/ui/IntentLink";
 import { useLoaderData, useNavigate, useSearchParams } from "react-router";
 import type { Route } from "./+types/agent";
 import { PUBLIC_INTERFACE_VERSION } from "@aihot/contracts/http-policy";
@@ -161,10 +160,10 @@ export default function AgentPage() {
         </nav>
       </AsideCard>
       <AsideCard title="没接上？">
-        <p className="text-[13px] leading-[1.75] text-ink-3">把平台、版本和报错写在反馈页，别发 token 或本地文件。</p>
-        <IntentLink viewTransition to="/feedback" className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-accent hover:underline">
-          去反馈 <IconChevronRight size={14} />
-        </IntentLink>
+        <p className="text-[13px] leading-[1.75] text-ink-3">把平台、版本和报错发到邮箱，别发 token 或本地文件。</p>
+        <a href={`mailto:${SITE.contactEmail}`} className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-accent hover:underline">
+          发邮件 <IconChevronRight size={14} />
+        </a>
       </AsideCard>
     </>
   );

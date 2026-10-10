@@ -158,11 +158,17 @@ function Maker({ maker, contact }: { maker: NonNullable<typeof ABOUT.maker>; con
             <Link viewTransition to="/changelog" className="text-accent hover:underline">
               更新日志
             </Link>
-            里；有想法、遇到问题，去
-            <Link viewTransition to="/feedback" className="text-accent hover:underline">
-              反馈页
-            </Link>
-            告诉我。
+            里
+            {SITE.contactEmail ? (
+              <>
+                ；有想法、遇到问题，发信到
+                <a href={`mailto:${SITE.contactEmail}`} className="text-accent hover:underline">
+                  {SITE.contactEmail}
+                </a>
+                告诉我
+              </>
+            ) : null}
+            。
           </p>
         </div>
       </div>
@@ -272,9 +278,11 @@ export default function AboutPage() {
 
       <p className="mt-16 well rounded-card px-5 py-4 text-[13px] leading-[1.85] text-ink-3">
         {ABOUT.copyright[0]}
-        <Link viewTransition to="/feedback" className="text-accent hover:underline">
-          反馈页
-        </Link>
+        {SITE.contactEmail ? (
+          <a href={`mailto:${SITE.contactEmail}`} className="text-accent hover:underline">
+            {SITE.contactEmail}
+          </a>
+        ) : null}
         {ABOUT.copyright[1]}
       </p>
 
