@@ -82,7 +82,14 @@ jobs:
         run: |
           node apps/api/src/main.ts > /tmp/api.log 2>&1 &
           for i in $(seq 1 60); do curl -fsS -o /dev/null http://127.0.0.1:3001/api/health 2>/dev/null && break; sleep 1; done
-          node scripts/export-static.ts --out static
+          set +e
+          node scripts/export-static.ts --out static 2>&1 | tee /tmp/export.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" != "0" ]; then
+            # 注解是公开的（日志要登录才能看）：导出挂在哪一步、报什么错，不用登录也知道。
+            tail -6 /tmp/export.log | while IFS= read -r line; do echo "::error::${line:0:900}"; done
+          fi
+          exit "$status"
       - name: 装浏览器（静态站体检用）
         run: npx playwright install --with-deps chromium
       - name: 静态站体检
