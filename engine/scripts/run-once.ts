@@ -147,8 +147,18 @@ try {
       log("reports", composed);
       reportFailed = composed.failed.length > 0;
     } catch (error) {
-      log("reports failed", { error: String(error).slice(0, 600) });
-      reportFailed = true;
+      const message = String(error).slice(0, 600);
+      // 只有周报/月报没出刊不算失败：它们唯一现实的失败原因就是"那一期没有日报条目"——
+      // 比如站点刚上线，上一周/上个月还没出过刊。模型写总述失败不会让整期失败（引擎会存一份没有总述的），
+      // 真要出故障，日报会先报错。
+      const failedPart = message.match(/^Error: reports: (.+?) failed/)?.[1] ?? "";
+      const failing = failedPart.split(", ").filter(Boolean);
+      if (failing.length > 0 && failing.every((f) => /^(weekly|monthly):/.test(f))) {
+        log("reports: 周报/月报跳过（那一期没有日报条目）", { failed: failing });
+      } else {
+        log("reports failed", { error: message });
+        reportFailed = true;
+      }
     }
     // 出刊后可能还有推送、事件综述之类的尾巴，再排空一次。
     if (!(await drain(Math.min(deadline, Date.now() + 5 * 60_000), "after-reports"))) log("出刊后的收尾没在时限内跑完");

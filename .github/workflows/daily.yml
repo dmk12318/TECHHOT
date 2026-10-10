@@ -50,5 +50,13 @@ jobs:
           SITE_URL: ${{ vars.SITE_URL || 'https://techhot.example' }}
           COLLECT_ENABLED: "true"
           MODEL_CALLS_ENABLED: "true"
-        run: node scripts/run-once.ts --budget ${{ github.event.inputs.budget || '45' }}
+        run: |
+          set +e
+          node scripts/run-once.ts --budget ${{ github.event.inputs.budget || '45' }} 2>&1 | tee /tmp/pipeline.log
+          status=${PIPESTATUS[0]}
+          # 把失败原因做成注解。注解是公开的（日志要登录才能看），出问题时不用登录也知道挂在哪。
+          grep -a 'report failed\|reports failed' /tmp/pipeline.log | tail -8 | while IFS= read -r line; do
+            echo "::error::${line:0:600}"
+          done
+          exit "$status"
       # TODO（阶段 3）：这里再接一步“导出静态页并发布”。
