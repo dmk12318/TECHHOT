@@ -24,6 +24,8 @@ const value = (name: string, fallback: string) => {
   return at >= 0 ? (args[at + 1] ?? fallback) : fallback;
 };
 const base = value("base", process.env.SITE_URL ?? "http://127.0.0.1:3000").replace(/\/+$/, "");
+/** 公开地址里的子路径（GitHub Pages 的项目站是 /TECHHOT）；挂在根路径时是空串。 */
+const basePath = new URL(base).pathname.replace(/\/+$/, "");
 // 取数据直接找 api，不绕网页进程：预渲染和下面的抓取都只需要 api 活着。
 const api = (process.env.API_BASE_URL ?? "http://127.0.0.1:3001").replace(/\/+$/, "");
 /** 网页构建（含预渲染）固定的产物目录；--out 指定别的目录时，构建完再整体搬过去。 */
@@ -62,7 +64,10 @@ console.log(`从 ${api} 取数据，按 ${base} 生成链接，导出到 ${out}`
 // 1) 路径清单：站点自己的 sitemap，加上主题页、纯客户端页面，以及「全部动态」里每一条。
 //    「全部动态」的列表会链到每一条；不给某一条出页面，读者点进去就是 404。
 const sitemap = await (await get("/sitemap.xml")).text();
-const paths = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]!).pathname);
+// 预渲染用的路径不带子路径（那是构建前缀的事，React Router 自己加），sitemap 里的地址可能带着它。
+const paths = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)]
+  .map((m) => new URL(m[1]!).pathname)
+  .map((p) => (p.startsWith(`${basePath}/`) ? p.slice(basePath.length) : p));
 const topics = (await (await get("/api/site/topics")).json()) as { topics: Array<{ slug: string }> };
 for (const t of topics.topics) paths.push(`/topics/${t.slug}`);
 for (const p of ["/starred", "/more"]) paths.push(p);
@@ -101,6 +106,20 @@ if (path.resolve(built) !== out) {
   console.log(`已把构建产物搬到 ${out}`);
 }
 
+// 挂子路径时（base 不是 /），React Router 会把预渲染出来的页面写进 base 那一层目录
+// （build/client/TECHHOT/all/index.html），而静态托管是把产物根目录当站点根目录的
+// （Pages 项目站的 /TECHHOT/ 就是仓库产物的根）。所以把这一层提上来，别多套一级。
+const nested = path.join(out, basePath.replace(/^\//, ""));
+if (basePath && existsSync(nested)) {
+  for (const entry of readdirSync(nested)) {
+    const target = path.join(out, entry);
+    if (existsSync(target)) rmSync(target, { recursive: true, force: true });
+    cpSync(path.join(nested, entry), target, { recursive: true });
+  }
+  rmSync(nested, { recursive: true, force: true });
+  console.log(`已把 ${basePath}/ 这一层提上来（静态托管的产物根目录就是站点根目录）`);
+}
+
 // 3) 站点自带的静态文件（robots、manifest、openapi、图标）由 api 提供，静态站上要自己放。
 const siteDir = path.join(REPO_ROOT, "site");
 for (const [from, to] of [
@@ -115,6 +134,20 @@ for (const [from, to] of [
 }
 console.log("已放进静态文件与站点图标");
 
+// robots.txt 和 manifest 在 site/public 里是带占位符的模板，复制过来的是没渲染的版本，得从 api 取渲染好的。
+writeFileSync(path.join(out, "robots.txt"), await (await get("/robots.txt")).text());
+const manifest = (await (await get("/manifest.webmanifest")).json()) as { start_url: string; scope: string; icons: Array<{ src: string }> };
+if (basePath) {
+  // 挂在子路径下时，manifest 里的地址也要指到那一段，不然装到桌面上打开的是别人的首页。
+  manifest.start_url = `${basePath}/`;
+  manifest.scope = `${basePath}/`;
+  manifest.icons = manifest.icons.map((icon) => ({ ...icon, src: `${basePath}${icon.src}` }));
+}
+writeFileSync(path.join(out, "manifest.webmanifest"), JSON.stringify(manifest));
+// GitHub Pages 默认按 Jekyll 处理，会把下划线开头的文件与目录（本站的 _.data）丢掉。
+writeFileSync(path.join(out, ".nojekyll"), "");
+console.log("已换成渲染好的 robots.txt / manifest.webmanifest，并放上 .nojekyll");
+
 // 4) 动态出口：RSS（全部 + 每个公开类别）、站点地图、llms.txt。
 let fetched = 0;
 fetched += await save("/feed.xml", "feed.xml");
@@ -124,15 +157,6 @@ fetched += await save("/sitemap.xml", "sitemap.xml");
 fetched += await save("/llms.txt", "llms.txt");
 console.log(`已生成 RSS / sitemap / llms.txt（${Math.round(fetched / 1024)} KB）`);
 
-// Agent 使用说明（/api/v1/agent）是一份给机器读的 Markdown。静态站上没有 api，
-// 但「Agent 接入」那一页链到它，所以也铺一个地址出来（原样放着，谁读都一样）。
-const agentDoc = await (await get("/api/v1/agent")).text();
-mkdirSync(path.join(out, "api/v1/agent"), { recursive: true });
-writeFileSync(
-  path.join(out, "api/v1/agent/index.html"),
-  `<!doctype html>\n<meta charset="utf-8">\n<title>Agent 使用说明 · 原始 Markdown</title>\n<pre>${agentDoc.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!)}</pre>\n`,
-);
-console.log("已生成 Agent 使用说明（api/v1/agent/）");
 
 // 4.5) 本地模式的数据：静态站没有后端，列表的筛选/翻页和搜索都在前端算，数据在这里生成。
 // 「一手」这个筛选是 T1 信源，公开接口不给信源分级，就顺手查一次库（脚本本来就连着库）。

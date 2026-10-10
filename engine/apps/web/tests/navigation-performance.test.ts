@@ -199,33 +199,6 @@ test('SSR freshness spent in an upstream cache is not renewed by HTML hydration'
   }finally{ttl=60;await context.close();}
 });
 
-test('Agent tabs finish offline with matching canonical; invalid direct tabs and anchored links keep a panel',async()=>{
-  const context=await chrome.newContext();const page=await context.newPage();
-  try{
-    await page.goto(origin+'/agent');
-    await context.setOffline(true);
-    await page.getByRole('tablist',{name:'接入方式'}).getByRole('tab',{selected:true}).click();
-    await expect(page.locator('#agent-panel')).not.toBeEmpty();
-    for(const [tab,name] of [['mcp',/^MCP/],['rss',/^RSS/],['api',/^REST API/]] as const){
-      const choice=page.getByRole('tab',{name});
-      // The active track was exercised above; compare navigation through every remaining track.
-      if(await choice.getAttribute('aria-selected')==='true')continue;
-      const target=await choice.getAttribute('href');
-      await choice.click();
-      await expect(page).toHaveURL(origin+target,{timeout:1500});
-      await expect(page.locator('link[rel=canonical]')).toHaveAttribute('href',origin+target);
-      await expect(page.locator('#agent-panel')).toHaveAttribute('aria-labelledby','agent-tab-'+tab);
-      await expect(page.locator('#agent-panel')).not.toBeEmpty();
-    }
-    await context.setOffline(false);
-    await page.goto(origin+'/agent?tab=unknown');
-    await expect(page.getByRole('tab').first()).toHaveAttribute('aria-selected','true');
-    await expect(page.locator('#agent-panel')).not.toBeEmpty();
-    await page.goto(origin+'/agent#agent-api-recovery');
-    await expect(page.locator('#agent-api-recovery')).toBeVisible();
-  }finally{await context.close();}
-});
-
 test('phone suggestions load only on opening, use one small read, retry failures and update on reopening',async()=>{
   const context=await safari.newContext({viewport:{width:390,height:844}});const page=await context.newPage();
   try{

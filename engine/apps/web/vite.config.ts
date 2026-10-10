@@ -6,6 +6,17 @@ import { isApiOwned, resolveRedirect } from "@aihot/contracts/http-policy";
 import { DEPLOYMENT } from "@aihot/site";
 import { proxyToApi } from "./app/lib/api-proxy.server.ts";
 
+/** 挂在子路径下时（见 react-router.config.ts），构建出来的资源地址也要带上这段前缀。 */
+const basePath = (() => {
+  const siteUrl = process.env.SITE_URL;
+  if (!siteUrl) return "/";
+  try {
+    return new URL(siteUrl).pathname.replace(/\/+$/, "") + "/";
+  } catch {
+    return "/";
+  }
+})();
+
 /** Development stand-in for the production web server: the shared redirect table and api-owned path routing. */
 function devEdge(): Plugin {
   return {
@@ -34,6 +45,7 @@ function devEdge(): Plugin {
 }
 
 export default defineConfig({
+  base: basePath,
   plugins: [devEdge(), tailwindcss(), reactRouter()],
   // The modules' pages import the engine's web code by this name (tsconfig.json paths).
   resolve: { alias: { "@aihot/web/": `${path.resolve(import.meta.dirname, "app")}/` } },

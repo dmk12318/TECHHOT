@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { ReportNavigationEntry, ReportNavigationResponse, ReportKind } from "@aihot/contracts/site";
 import { PillTabs } from "../../components/ui/Tabs";
 import { IconChevronRight } from "../../components/icons";
+import { sitePath } from "../../lib/base-path";
 import { KINDS, KIND_LABEL, KIND_PATH, archiveGroups, archiveMark, chipLabel, reportPath } from "./format";
 
 /** 日报 / 周报 / 月报 as the site's pill switch: spread across the archive column, or compact in the phone bar (opening at the top). */
@@ -92,7 +93,7 @@ function ArchiveGroup({ g, kind, current, initiallyOpen }: {
           );
         })}
       </ul>}
-      {kind === "daily" && !open && <noscript><a href="/daily/archive">查看完整日报归档</a></noscript>}
+      {kind === "daily" && !open && <noscript><a href={sitePath("/daily/archive")}>查看完整日报归档</a></noscript>}
     </details>
   );
 }

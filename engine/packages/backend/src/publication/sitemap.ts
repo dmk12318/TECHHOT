@@ -37,7 +37,6 @@ async function build(at: Date): Promise<string> {
     { loc: "/topics", changefreq: "daily", priority: 0.7 },
     // The modules' pages, between the content pages and the site's own.
     ...serverModules().flatMap((m) => m.sitemap?.pages ?? []),
-    { loc: "/agent", lastmod: now, changefreq: "weekly", priority: 0.7 },
     { loc: "/about", changefreq: "monthly", priority: 0.5 },
     { loc: "/terms", changefreq: "monthly", priority: 0.4 },
     { loc: "/privacy", changefreq: "monthly", priority: 0.4 },

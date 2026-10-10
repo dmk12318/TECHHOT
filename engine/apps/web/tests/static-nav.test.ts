@@ -27,15 +27,23 @@ const TYPES: Record<string, string> = {
 let server: Server;
 let origin: string;
 let browser: Browser;
+/** 站点挂的子路径，例如 GitHub Pages 项目站的 "/TECHHOT"；挂在根路径时是空串。 */
+let prefix = "";
 
-/** 静态托管的样子：目录取 index.html，别的都当文件；取不到就是 404。 */
+/** 静态托管的样子：目录取 index.html，别的都当文件；取不到就是 404。站点挂在子路径下时，先脱掉那一段。 */
 function serveStatic(): Server {
   return createServer(async (req, res) => {
     const pathname = decodeURIComponent(new URL(req.url!, "http://static.local").pathname);
-    let file = path.join(root, pathname);
+    if (prefix && !pathname.startsWith(`${prefix}/`) && pathname !== prefix && pathname !== "/") {
+      res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+      res.end("not found");
+      return;
+    }
+    const relative = prefix ? pathname.slice(prefix.length) : pathname;
+    let file = path.join(root, relative);
     if (!file.startsWith(root)) { res.writeHead(400).end("bad"); return; }
     try { if ((await stat(file)).isDirectory()) file = path.join(file, "index.html"); }
-    catch { file = path.join(root, pathname, "index.html"); }
+    catch { file = path.join(root, relative, "index.html"); }
     try {
       const body = await readFile(file);
       res.writeHead(200, { "content-type": TYPES[path.extname(file)] ?? "application/octet-stream" });
@@ -53,14 +61,19 @@ async function open(pathname: string, viewport = { width: 1280, height: 900 }) {
   const page = await context.newPage();
   const documents: string[] = [];
   page.on("request", (request) => { if (request.resourceType() === "document") documents.push(request.url()); });
-  await page.goto(origin + pathname, { waitUntil: "networkidle" });
+  await page.goto(origin + prefix + pathname, { waitUntil: "networkidle" });
   return { context, page, documents };
 }
 
 const textOf = (page: Page) => page.locator("body").innerText().then((text) => text.replace(/\s+/g, " "));
 
+/** 站内地址要带上子路径（router 会加，源码里写的是不带前缀的）。 */
+const link = (href: string) => `a[href^="${prefix}${href}"]`;
+
 before(async () => {
   if (!exported) return;
+  // 产物挂在哪个子路径下，从首页里 static 图标的地址上看（构建时由 SITE_URL 决定）。
+  prefix = /href="([^"]*)\/manifest\.webmanifest"/.exec(await readFile(path.join(root, "index.html"), "utf8"))?.[1] ?? "";
   server = serveStatic();
   server.listen(0, "127.0.0.1");
   await new Promise((resolve) => server.once("listening", resolve));
@@ -109,7 +122,7 @@ describe("静态站体检", { skip: exported ? false : "还没导出过静态站
     const { context, page, documents } = await open("/");
     try {
       assert.equal(documents.length, 1, "打开首页就该只有一次文档请求");
-      await page.locator('a[href="/all"]').first().click();
+      await page.locator(link("/all")).first().click();
       await page.waitForURL("**/all");
       await page.waitForTimeout(500);
       assert.equal(documents.length, 1, "点导航不该重新加载整页");
@@ -120,10 +133,10 @@ describe("静态站体检", { skip: exported ? false : "还没导出过静态站
   test("列表里的条目页打得开", async () => {
     const { context, page, documents } = await open("/all");
     try {
-      const link = page.locator('a[href^="/items/"]').first();
-      const href = await link.getAttribute("href");
-      const title = (await link.innerText()).trim().split("\n")[0]!;
-      await link.click();
+      const first = page.locator(`a[href^="${prefix}/items/"]`).first();
+      const href = await first.getAttribute("href");
+      const title = (await first.innerText()).trim().split("\n")[0]!;
+      await first.click();
       await page.waitForURL(`**${href!}`);
       await page.waitForTimeout(500);
       assert.equal(documents.length, 1, "点条目不该重新加载整页");
@@ -135,7 +148,7 @@ describe("静态站体检", { skip: exported ? false : "还没导出过静态站
     const { context, page, documents } = await open("/all");
     try {
       const before = await textOf(page);
-      await page.locator('a[href^="/all?category="]').first().click();
+      await page.locator(link("/all?category=")).first().click();
       await page.waitForURL("**/all?category=*");
       await page.waitForTimeout(1000);
       assert.equal(documents.length, 1, "筛选不该重新加载整页");

@@ -1,0 +1,78 @@
+# 发布静态站：不跑管线，只按库里的内容重新导出一份，发到 GitHub Pages。
+#
+# 什么时候用：改了站点的样子（文案、样式、本地数据、导出脚本）之后推上来，不用等下一次出刊。
+# 出刊那条流程（daily.yml）自己也会在跑完管线后发布一次，两条用的是同一个 Pages 环境，会排队。
+#
+# 地址是项目站：https://<用户名>.github.io/<仓库名>/。仓库名那一段就是站点的子路径，
+# 构建时按 SITE_URL 自动带上（改了仓库名要改下面的 SITE_URL）。
+name: 发布
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SITE_URL: ${{ vars.SITE_URL || 'https://dmk12318.github.io/TECHHOT' }}
+    defaults:
+      run:
+        working-directory: engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: engine/package-lock.json
+      - run: npm ci
+      - name: 取回分享图缓存
+        uses: actions/cache@v4
+        with:
+          path: engine/.data/og
+          key: og-${{ github.run_number }}
+          restore-keys: og-
+      - name: 导出静态站
+        # 导出要 api 活着（预渲染在线取数）：起一个临时的，这个 workflow 结束就没了。
+        run: |
+          node apps/api/src/main.ts > /tmp/api.log 2>&1 &
+          for i in $(seq 1 60); do curl -fsS -o /dev/null http://127.0.0.1:3001/api/health 2>/dev/null && break; sleep 1; done
+          node scripts/export-static.ts --out static
+      - name: 装浏览器（静态站体检用）
+        run: npx playwright install --with-deps chromium
+      - name: 静态站体检
+        # 链接取不到、客户端跳转坏掉、搜索不出结果，都在这里挡住：宁可这一版不发。
+        run: |
+          set +e
+          node --test apps/web/tests/static-nav.test.ts 2>&1 | tee /tmp/static-tests.log
+          status=${PIPESTATUS[0]}
+          grep -a '^✖' /tmp/static-tests.log | sort -u | head -5 | while IFS= read -r line; do
+            echo "::error::${line#✖ }"
+          done
+          exit "$status"
+      - name: 准备 GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: 打包给 Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: engine/static
+      - name: 发布
+        id: deployment
+        uses: actions/deploy-pages@v4

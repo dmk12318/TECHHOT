@@ -4,6 +4,7 @@
 import type { FeedItemSummary, PoolResponse, TimelineFilters } from "@aihot/contracts/site";
 import { CATEGORY_LABELS, type CategoryKey } from "@aihot/contracts/taxonomy";
 import { beijingDate } from "@aihot/contracts/time";
+import { sitePath } from "../../lib/base-path";
 
 /** 和 /api/site/pool 一样：每页 40 条，最多 50 页。 */
 const PAGE_SIZE = 40;
@@ -19,7 +20,7 @@ let loading: Promise<LocalData | null> | null = null;
 
 /** 只读一次；读不到就不再试（静态站上要么有这份数据，要么就没有）。 */
 export function loadLocalData(): Promise<LocalData | null> {
-  loading ??= fetch("/pool.json")
+  loading ??= fetch(sitePath("/pool.json"))
     .then((res) => (res.ok ? (res.json() as Promise<LocalData>) : null))
     .catch(() => null);
   return loading;

@@ -16,17 +16,18 @@ import { SearchOverlay } from "./features/search/SearchOverlay";
 import { BackToTop, NavigationProgress } from "./components/shell/Chrome";
 import { buttonClass } from "./components/ui/Controls";
 import { rememberPage, THEME_BOOT_SCRIPT, useThemeSync } from "./lib/local-state";
+import { sitePath } from "./lib/base-path";
 import { apiGet } from "./lib/api.server";
 import { useHydratedFlag } from "./lib/hydration";
 import { titled } from "./lib/seo";
 import { webModules } from "./site-modules";
 
 export const links: Route.LinksFunction = () => [
-  { rel: "icon", href: "/favicon.ico", sizes: "any" },
-  { rel: "icon", type: "image/png", href: "/icon.png" },
-  { rel: "apple-touch-icon", href: "/apple-icon.png" },
-  { rel: "manifest", href: "/manifest.webmanifest" },
-  { rel: "alternate", type: "application/rss+xml", title: `${SITE.name} — 精选`, href: "/feed.xml" },
+  { rel: "icon", href: sitePath("/favicon.ico"), sizes: "any" },
+  { rel: "icon", type: "image/png", href: sitePath("/icon.png") },
+  { rel: "apple-touch-icon", href: sitePath("/apple-icon.png") },
+  { rel: "manifest", href: sitePath("/manifest.webmanifest") },
+  { rel: "alternate", type: "application/rss+xml", title: `${SITE.name} — 精选`, href: sitePath("/feed.xml") },
 ];
 
 /** The release rendering this document: once a newer one is deployed, a render error reloads the page (entry.client). */

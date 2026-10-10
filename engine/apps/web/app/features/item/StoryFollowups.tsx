@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import type { StoryFollowup, StoryFollowupsResponse, StoryRef } from "@aihot/contracts/site";
 import { MoreLink } from "../../components/ui/Page";
+import { sitePath } from "../../lib/base-path";
 import { relativeTime } from "../../lib/format";
 
 /**
@@ -35,7 +36,7 @@ export function StoryFollowups({ story, currentId }: { story: StoryRef; currentI
     return () => { observer?.disconnect(); controller.abort(); };
   }, [story.publicId, currentId]);
   return <div ref={anchor}>
-    <noscript><a href={`/story/${story.publicId}`}>查看事件全部后续</a></noscript>
+    <noscript><a href={sitePath(`/story/${story.publicId}`)}>查看事件全部后续</a></noscript>
     {items && items.length > 0 && <Followups items={items} more={more} story={story} />}
   </div>;
 }
