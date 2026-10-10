@@ -90,13 +90,29 @@ if (skipBuild) {
   console.log("跳过构建（--skip-build），直接用现有产物");
 } else {
 console.log("开始构建 + 预渲染…");
-// npm 跟 Node 装在一起（不是装在仓库的 node_modules 里），所以从 node.exe 旁边找。
-const npmCli = process.env.npm_execpath ?? path.join(path.dirname(process.execPath), "node_modules/npm/bin/npm-cli.js");
-execFileSync(process.execPath, [npmCli, "run", "build", "-w", "@aihot/web"], {
-  cwd: REPO_ROOT,
-  env: { ...process.env, STATIC_EXPORT_PATHS: listFile, SITE_URL: base },
-  stdio: ["ignore", "inherit", "inherit"],
-});
+// npm 不在仓库的 node_modules 里，而是跟 Node 装在一起：Windows 在 node.exe 旁边，
+// Linux / macOS 在 Node 前缀的 lib/ 下面（CI 的 runner 就是后者），两处都找一下。
+const npmCli = [
+  process.env.npm_execpath,
+  path.join(path.dirname(process.execPath), "node_modules/npm/bin/npm-cli.js"),
+  path.join(path.dirname(process.execPath), "lib/node_modules/npm/bin/npm-cli.js"),
+  path.join(path.dirname(process.execPath), "../lib/node_modules/npm/bin/npm-cli.js"),
+].find((candidate): candidate is string => !!candidate && existsSync(candidate));
+if (!npmCli) throw new Error("找不到 npm，没法跑网页构建");
+try {
+  execFileSync(process.execPath, [npmCli, "run", "build", "-w", "@aihot/web"], {
+    cwd: REPO_ROOT,
+    env: { ...process.env, STATIC_EXPORT_PATHS: listFile, SITE_URL: base },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+} catch (error) {
+  // 构建挂了：把子进程最后说的话打出来（CI 里只把最后几行做成公开注解，不能让它只剩一个退出码）。
+  const failed = error as { stdout?: Buffer | string; stderr?: Buffer | string; status?: number | null };
+  console.error(`构建失败（退出码 ${failed.status ?? "?"}），子进程最后输出：`);
+  console.error(String(failed.stdout ?? "").slice(-3000));
+  console.error(String(failed.stderr ?? "").slice(-3000));
+  throw error;
+}
 }
 
 if (path.resolve(built) !== out) {
@@ -179,8 +195,11 @@ const walk = (dir: string) => {
   }
 };
 walk(out);
+// 站点挂子路径时，页面里的分享图地址也带着那一段（https://…/TECHHOT/og/…）：
+// 取回来和落盘都要脱掉前缀——产物根目录就是站点根目录，域名后面那一段不在文件路径里。
+const localImages = [...images].map((p) => (p.startsWith(`${basePath}/`) ? p.slice(basePath.length) : p));
 if (skipImages) {
-  console.log(`跳过分享图（--skip-images），本来要抓 ${images.size} 张`);
+  console.log(`跳过分享图（--skip-images），本来要抓 ${localImages.length} 张`);
 } else {
   // 分享图很贵（每张都要渲染一次）。抓过的留在 .data/og：CI 里把它挂在 actions/cache 上，
   // 每天只补新出现的那几张，不然条目越攒越多，一轮导出会慢到跑不完。
@@ -188,7 +207,7 @@ if (skipImages) {
   let bytes = 0;
   let fetched = 0;
   let reused = 0;
-  for (const p of images) {
+  for (const p of localImages) {
     const target = path.join(out, p.replace(/^\//, ""));
     const cached = path.join(cache, p.replace(/^\//, ""));
     if (existsSync(target)) { reused += 1; continue; }
@@ -203,7 +222,7 @@ if (skipImages) {
     copyFileSync(target, cached);
     fetched += 1;
   }
-  console.log(`分享图 ${images.size} 张：新抓 ${fetched} 张（${Math.round(bytes / 1024)} KB），复用 ${reused} 张`);
+  console.log(`分享图 ${localImages.length} 张：新抓 ${fetched} 张（${Math.round(bytes / 1024)} KB），复用 ${reused} 张`);
 }
 
 if (!existsSync(path.join(out, "index.html"))) throw new Error("产物里没有 index.html，导出失败");

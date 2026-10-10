@@ -51,13 +51,20 @@ jobs:
         # 导出要 api 活着（预渲染在线取数）：起一个临时的，这个 workflow 结束就没了。
         run: |
           node apps/api/src/main.ts > /tmp/api.log 2>&1 &
-          for i in $(seq 1 60); do curl -fsS -o /dev/null http://127.0.0.1:3001/api/health 2>/dev/null && break; sleep 1; done
+          ready=no
+          for i in $(seq 1 60); do curl -fsS -o /dev/null http://127.0.0.1:3001/api/health 2>/dev/null && { ready=yes; break; }; sleep 1; done
+          if [ "$ready" != "yes" ]; then
+            echo "::error::api 在 60 秒内没起来"
+            tail -20 /tmp/api.log | while IFS= read -r line; do echo "::error::api：${line:0:900}"; done
+            exit 1
+          fi
           set +e
           node scripts/export-static.ts --out static 2>&1 | tee /tmp/export.log
           status=${PIPESTATUS[0]}
           if [ "$status" != "0" ]; then
             # 注解是公开的（日志要登录才能看）：导出挂在哪一步、报什么错，不用登录也知道。
-            tail -6 /tmp/export.log | while IFS= read -r line; do echo "::error::${line:0:900}"; done
+            tail -20 /tmp/export.log | while IFS= read -r line; do echo "::error::${line:0:900}"; done
+            tail -10 /tmp/api.log | while IFS= read -r line; do echo "::error::api：${line:0:900}"; done
           fi
           exit "$status"
       - name: 装浏览器（静态站体检用）
